@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast AI Chat Bot - Powered by Mixtral</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        // Session Check
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'auth.html';
+        }
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i data-lucide="zap" class="logo-icon"></i>
+                <h1>AI Chat</h1>
+            </div>
+            
+            <nav style="display:flex;flex-direction:column;gap:8px;margin-bottom:1.5rem;">
+                <button id="new-chat-btn" class="new-chat-btn">
+                    <i data-lucide="plus"></i> New Chat
+                </button>
+                <a href="translate.html" class="new-chat-btn" style="text-decoration:none;background:transparent;border-color:var(--border-color);color:var(--text-primary);display:flex;align-items:center;justify-content:center;gap:8px;">
+                    <i data-lucide="languages"></i> Translator
+                </a>
+            </nav>
+            <div class="chat-history">
+                <!-- History items will appear here -->
+            </div>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="avatar" id="user-avatar">?</div>
+                    <div class="user-info">
+                        <span class="user-name" id="user-display-name">User</span>
+                        <button id="logout-btn" class="logout-link">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="main-chat">
+            <header class="chat-header">
+                <div class="model-selector">
+                    <select id="model-select">
+                        <option value="mixtral">Mixtral 8x7B</option>
+                        <option value="gemma">Gemma 7B (Code Gen)</option>
+                    </select>
+                    <i data-lucide="chevron-down" class="select-icon"></i>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn"><i data-lucide="more-vertical"></i></button>
+                </div>
+            </header>
+
+            <div id="chat-messages" class="chat-messages">
+                <!-- Welcome Message -->
+                <div class="message assistant welcome">
+                    <div class="message-content">
+                        <h2 id="welcome-title">Welcome back!</h2>
+                        <p>I'm your AI assistant powered by Mixtral. How can I help you today?</p>
+                        <div class="suggestions">
+                            <button onclick="setInput('Write a python script for a simple web scraper')">Write a python script...</button>
+                            <button onclick="setInput('Explain quantum entanglement in simple terms')">Explain quantum entanglement...</button>
+                            <button onclick="setInput('Summarize the benefits of machine learning')">Summarize AI benefits...</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-wrapper">
+                <div class="chat-input-content">
+                    <div id="file-preview-container" class="file-preview-container" style="display: none;">
+                        <i data-lucide="file-text"></i>
+                        <span id="file-preview-name">filename.pdf</span>
+                        <button id="remove-file-btn"><i data-lucide="x" class="x-icon"></i></button>
+                    </div>
+                    <div class="input-container">
+                        <input type="file" id="file-upload" accept=".txt,.pdf" style="display: none;">
+                        <button id="attach-btn" class="attach-btn" title="Attach Document"><i data-lucide="paperclip"></i></button>
+                        <textarea id="chat-input" placeholder="Message AI..." rows="1"></textarea>
+                        <button id="send-btn" class="send-btn" disabled>
+                            <i data-lucide="arrow-up"></i>
+                        </button>
+                    </div>
+                    <p class="input-footer">AI may display inaccurate info, so double-check its responses.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        lucide.createIcons();
+
+        function setInput(text) {
+            const input = document.getElementById('chat-input');
+            input.value = text;
+            input.dispatchEvent(new Event('input'));
+            input.focus();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Signup - AI Chatbot</title>
+    <meta name="description" content="Sign in or create an account to access your AI-powered assistant.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --blue: #3b82f6;
+            --violet: #8b5cf6;
+            --cyan: #06b6d4;
+            --pink: #ec4899;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #080c14;
+            color: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ─── Animated Background ─────────────────────────── */
+        .bg-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.35;
+            animation: drift 12s ease-in-out infinite alternate;
+        }
+        .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, #3b82f6, transparent); top: -150px; left: -150px; animation-delay: 0s; }
+        .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, #8b5cf6, transparent); bottom: -100px; left: 30%; animation-delay: -4s; }
+        .orb-3 { width: 350px; height: 350px; background: radial-gradient(circle, #06b6d4, transparent); top: 20%; right: -100px; animation-delay: -8s; }
+
+        @keyframes drift {
+            0%   { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(30px, 40px) scale(1.1); }
+        }
+
+        /* ─── Grid ────────────────────────────────────────── */
+        .auth-shell {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        /* ─── LEFT PANEL ──────────────────────────────────── */
+        .left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 60px 70px;
+            background: rgba(255,255,255,0.02);
+            border-right: 1px solid rgba(255,255,255,0.07);
+            backdrop-filter: blur(2px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Subtle grid overlay */
+        .left-panel::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 60px;
+        }
+
+        .brand-icon {
+            width: 44px; height: 44px;
+            background: linear-gradient(135deg, var(--blue), var(--violet));
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+        }
+
+        .brand-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-headline {
+            font-size: clamp(2rem, 3.5vw, 3rem);
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        .hero-headline .gradient-text {
+            background: linear-gradient(135deg, var(--blue), var(--cyan), var(--violet));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-sub {
+            font-size: 1rem;
+            color: #94a3b8;
+            line-height: 1.7;
+            max-width: 420px;
+            margin-bottom: 50px;
+        }
+
+        /* Feature cards */
+        .features {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 16px 18px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+
+        .feature-item:hover {
+            background: rgba(59,130,246,0.08);
+            border-color: rgba(59,130,246,0.25);
+            transform: translateX(4px);
+        }
+
+        .feature-icon {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+
+        .fi-blue  { background: rgba(59,130,246,0.15); }
+        .fi-violet{ background: rgba(139,92,246,0.15); }
+        .fi-cyan  { background: rgba(6,182,212,0.15); }
+        .fi-pink  { background: rgba(236,72,153,0.15); }
+
+        .feature-text h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 2px; }
+        .feature-text p  { font-size: 0.78rem; color: #64748b; line-height: 1.5; }
+
+        /* Bottom testimonial */
+        .testimonial {
+            margin-top: 50px;
+            padding: 20px 22px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            max-width: 440px;
+        }
+
+        .testimonial p {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            font-style: italic;
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .t-avatar {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--blue), var(--violet));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700;
+        }
+
+        .t-name { font-size: 0.8rem; font-weight: 600; }
+        .t-role { font-size: 0.7rem; color: #64748b; }
+
+        /* ─── RIGHT PANEL ─────────────────────────────────── */
+        .right-panel {
+            width: 480px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 50px;
+            background: rgba(255,255,255,0.015);
+            backdrop-filter: blur(30px);
+        }
+
+        .form-card {
+            width: 100%;
+            max-width: 380px;
+            animation: slideUp 0.6s cubic-bezier(0.16,1,0.3,1);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-header {
+            margin-bottom: 32px;
+        }
+
+        .mode-toggle {
+            display: flex;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 28px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            border-radius: 9px;
+            color: #64748b;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, var(--blue), var(--violet));
+            color: white;
+            box-shadow: 0 4px 14px rgba(59,130,246,0.35);
+        }
+
+        .form-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .form-subtitle {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        /* Inputs */
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 13px 14px 13px 42px;
+            background: rgba(255,255,255,0.05);
+            border: 1.5px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            color: #f1f5f9;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.25s ease;
+        }
+
+        .input-wrapper input:focus {
+            outline: none;
+            border-color: var(--blue);
+            background: rgba(59,130,246,0.07);
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+        }
+
+        .input-wrapper input::placeholder { color: #475569; }
+
+        /* Strength indicator (signup only) */
+        .strength-bar {
+            height: 3px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.07);
+            margin-top: 8px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .strength-fill {
+            height: 100%;
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease, background 0.3s ease;
+        }
+
+        .strength-label {
+            font-size: 0.7rem;
+            margin-top: 4px;
+            display: none;
+        }
+
+        /* Submit */
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 6px;
+            background: linear-gradient(135deg, var(--blue), var(--violet));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            letter-spacing: 0.01em;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(59,130,246,0.4); }
+        .submit-btn:hover::before { opacity: 1; }
+        .submit-btn:active { transform: translateY(0); }
+        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        /* Spinner inside button */
+        .btn-spinner {
+            display: none;
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 22px 0;
+            color: #334155;
+            font-size: 0.8rem;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.07);
+        }
+
+        /* Alert */
+        .alert {
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin-bottom: 18px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+        .alert-error {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.2);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: rgba(34,197,94,0.1);
+            border: 1px solid rgba(34,197,94,0.2);
+            color: #86efac;
+        }
+
+        /* Stats row */
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 28px;
+            padding-top: 22px;
+            border-top: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .stat-item { text-align: center; }
+        .stat-number { font-size: 1.1rem; font-weight: 800; background: linear-gradient(135deg, var(--blue), var(--cyan)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-label { font-size: 0.7rem; color: #475569; margin-top: 2px; }
+
+        /* Terms */
+        .terms {
+            text-align: center;
+            font-size: 0.72rem;
+            color: #475569;
+            margin-top: 18px;
+            line-height: 1.6;
+        }
+        .terms a { color: #60a5fa; text-decoration: none; }
+        .terms a:hover { text-decoration: underline; }
+
+        /* ─── Responsive ──────────────────────────────────── */
+        @media (max-width: 900px) {
+            .left-panel { display: none; }
+            .right-panel { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-canvas">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+
+<div class="auth-shell">
+
+    <!-- ═══ LEFT PANEL ═══ -->
+    <div class="left-panel">
+        <div class="brand">
+            <div class="brand-icon">⚡</div>
+            <span class="brand-name">AI Chatbot</span>
+        </div>
+
+        <div class="hero-headline">
+            Your AI Assistant,<br>
+            <span class="gradient-text">Smarter Than Ever.</span>
+        </div>
+
+        <p class="hero-sub">
+            Powered by Mixtral & Gemma, our AI delivers lightning-fast answers,
+            writes code, explains concepts, and supercharges your productivity.
+        </p>
+
+        <div class="features">
+            <div class="feature-item">
+                <div class="feature-icon fi-blue">⚡</div>
+                <div class="feature-text">
+                    <h4>Lightning Fast Responses</h4>
+                    <p>Optimized streaming powered by Mixtral 8×7B — answers in seconds, not minutes.</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon fi-violet">💻</div>
+                <div class="feature-text">
+                    <h4>Code Generation</h4>
+                    <p>Switch to Gemma 7B for expert-level code generation across all major languages.</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon fi-cyan">💬</div>
+                <div class="feature-text">
+                    <h4>Persistent Chat History</h4>
+                    <p>All your conversations are saved locally — pick up exactly where you left off.</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon fi-pink">🔒</div>
+                <div class="feature-text">
+                    <h4>Secure & Private</h4>
+                    <p>Your account is protected with bcrypt hashing and JWT session tokens.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="testimonial">
+            <p>"This AI assistant has completely transformed how I approach problem-solving. It's like having a brilliant colleague available 24/7."</p>
+            <div class="testimonial-author">
+                <div class="t-avatar">VB</div>
+                <div>
+                    <div class="t-name">Vaibhav Bhardwaj</div>
+                    <div class="t-role">Developer &amp; Creator</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ RIGHT PANEL ═══ -->
+    <div class="right-panel">
+        <div class="form-card">
+
+            <!-- Tab toggles -->
+            <div class="mode-toggle">
+                <button class="mode-btn active" id="btn-login" onclick="setMode('login')">Login</button>
+                <button class="mode-btn" id="btn-signup" onclick="setMode('signup')">Sign Up</button>
+            </div>
+
+            <!-- Header text -->
+            <div class="form-header">
+                <h2 class="form-title" id="form-title">Welcome back 👋</h2>
+                <p class="form-subtitle" id="form-subtitle">Sign in to continue to your AI workspace.</p>
+            </div>
+
+            <!-- Alert Box -->
+            <div class="alert" id="alert-box"></div>
+
+            <!-- Form -->
+            <form id="auth-form" autocomplete="on">
+                <div class="input-group">
+                    <label for="username">Username or Email</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="username" placeholder="you@example.com" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">🔑</span>
+                        <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password" oninput="onPasswordInput(this.value)">
+                    </div>
+                    <div class="strength-bar" id="strength-bar">
+                        <div class="strength-fill" id="strength-fill"></div>
+                    </div>
+                    <div class="strength-label" id="strength-label"></div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submit-btn">
+                    <span id="btn-label">Login</span>
+                    <div class="btn-spinner" id="btn-spinner"></div>
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="divider">secure authentication</div>
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-number">2</div>
+                    <div class="stat-label">AI Models</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">∞</div>
+                    <div class="stat-label">Conversations</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">24h</div>
+                    <div class="stat-label">Session Valid</div>
+                </div>
+            </div>
+
+            <!-- Terms -->
+            <p class="terms">
+                By continuing, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    let isLogin = true;
+
+    // Redirect if already authenticated
+    if (localStorage.getItem('token')) window.location.href = 'index.html';
+
+    function setMode(mode) {
+        isLogin = (mode === 'login');
+        document.getElementById('btn-login').classList.toggle('active', isLogin);
+        document.getElementById('btn-signup').classList.toggle('active', !isLogin);
+
+        document.getElementById('form-title').innerText   = isLogin ? 'Welcome back 👋' : 'Create Account 🚀';
+        document.getElementById('form-subtitle').innerText = isLogin
+            ? 'Sign in to continue to your AI workspace.'
+            : 'Join thousands of users supercharging their workflow.';
+        document.getElementById('btn-label').innerText = isLogin ? 'Login' : 'Create Account';
+        document.getElementById('password').autocomplete  = isLogin ? 'current-password' : 'new-password';
+
+        const strengthBar   = document.getElementById('strength-bar');
+        const strengthLabel = document.getElementById('strength-label');
+        strengthBar.style.display   = isLogin ? 'none' : 'block';
+        strengthLabel.style.display = isLogin ? 'none' : 'block';
+
+        hideAlert();
+    }
+
+    function onPasswordInput(val) {
+        if (isLogin) return;
+        const fill  = document.getElementById('strength-fill');
+        const label = document.getElementById('strength-label');
+        let strength = 0;
+        if (val.length >= 8) strength++;
+        if (/[A-Z]/.test(val)) strength++;
+        if (/[0-9]/.test(val)) strength++;
+        if (/[^a-zA-Z0-9]/.test(val)) strength++;
+        const levels = [
+            { pct: '25%', color: '#ef4444', text: 'Weak' },
+            { pct: '50%', color: '#f97316', text: 'Fair' },
+            { pct: '75%', color: '#eab308', text: 'Good' },
+            { pct: '100%',color: '#22c55e', text: 'Strong' },
+        ];
+        const lvl = levels[strength - 1] || { pct: '0%', color: '#334155', text: '' };
+        fill.style.width      = lvl.pct;
+        fill.style.background = lvl.color;
+        label.innerText       = lvl.text;
+        label.style.color     = lvl.color;
+    }
+
+    function showAlert(type, msg) {
+        const box = document.getElementById('alert-box');
+        box.className = `alert alert-${type}`;
+        box.innerHTML = `<span>${type === 'error' ? '⚠️' : '✅'}</span> ${msg}`;
+        box.style.display = 'flex';
+    }
+
+    function hideAlert() {
+        const box = document.getElementById('alert-box');
+        box.style.display = 'none';
+    }
+
+    function setLoading(loading) {
+        const btn     = document.getElementById('submit-btn');
+        const label   = document.getElementById('btn-label');
+        const spinner = document.getElementById('btn-spinner');
+        btn.disabled        = loading;
+        label.style.display = loading ? 'none' : 'inline';
+        spinner.style.display = loading ? 'block' : 'none';
+    }
+
+    document.getElementById('auth-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+
+        hideAlert();
+        setLoading(true);
+
+        const endpoint = isLogin ? '/api/login' : '/api/signup';
+
+        try {
+            const res  = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                if (isLogin) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('username', data.username);
+                    showAlert('success', 'Success! Redirecting to your workspace…');
+                    setTimeout(() => window.location.href = 'index.html', 800);
+                } else {
+                    showAlert('success', 'Account created! Please log in.');
+                    setMode('login');
+                }
+            } else {
+                showAlert('error', data.error || 'Something went wrong. Please try again.');
+            }
+        } catch {
+            showAlert('error', 'Cannot connect to server. Is it running?');
+        } finally {
+            setLoading(false);
+        }
+    });
+</script>
+</body>
+</html>

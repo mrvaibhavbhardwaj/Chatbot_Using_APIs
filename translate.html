@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Translator - Powered by Baichuan2</title>
+    <meta name="description" content="AI-powered real-time language translation using Baichuan2-13B.">
+    <link rel="stylesheet" href="index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        if (!localStorage.getItem('token')) window.location.href = 'auth.html';
+    </script>
+    <style>
+        .translate-shell {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+        }
+
+        /* ── Main area ── */
+        .translate-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: radial-gradient(circle at top right, #1a202c, #0b0e14);
+            overflow: hidden;
+        }
+
+        /* ── Header ── */
+        .translate-header {
+            height: 60px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            backdrop-filter: blur(10px);
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+        .back-btn:hover { background: var(--glass-bg); color: var(--text-primary); }
+
+        .page-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .model-badge-t {
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            color: #a78bfa;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* ── Content ── */
+        .translate-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* ── Language Bar ── */
+        .lang-bar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--sidebar-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 0.85rem 1.25rem;
+        }
+
+        .lang-select-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .lang-select-wrap label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .lang-select {
+            appearance: none;
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 8px 12px;
+            cursor: pointer;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .lang-select:focus {
+            border-color: var(--accent-color);
+            background: rgba(59,130,246,0.07);
+        }
+
+        .lang-select option { background: #151921; }
+
+        .swap-btn {
+            background: rgba(59,130,246,0.1);
+            border: 1px solid rgba(59,130,246,0.2);
+            color: var(--accent-color);
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            flex-shrink: 0;
+            margin-top: 18px;
+        }
+
+        .swap-btn:hover {
+            background: rgba(59,130,246,0.2);
+            transform: rotate(180deg);
+        }
+
+        /* ── Panels ── */
+        .panels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            background: var(--sidebar-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .panel:focus-within {
+            border-color: rgba(59,130,246,0.4);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.08);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.85rem 1.1rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(255,255,255,0.02);
+        }
+
+        .panel-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+        }
+
+        .panel-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .panel-icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+            display: flex;
+            transition: var(--transition);
+        }
+
+        .panel-icon-btn:hover { background: var(--glass-bg); color: var(--text-primary); }
+
+        .panel textarea,
+        .panel .output-area {
+            flex: 1;
+            padding: 1rem 1.1rem;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            resize: none;
+            outline: none;
+            min-height: 200px;
+        }
+
+        .panel textarea::placeholder { color: #475569; }
+
+        .output-area {
+            display: block;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: var(--text-primary);
+        }
+
+        .output-area.empty { color: #475569; font-style: italic; }
+
+        /* Char counter */
+        .char-count {
+            padding: 6px 1.1rem;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-color);
+            text-align: right;
+        }
+
+        /* ── Translate Button ── */
+        .translate-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .translate-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .translate-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .translate-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(59,130,246,0.35); }
+        .translate-btn:hover::before { opacity: 1; }
+        .translate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .clear-btn {
+            padding: 12px 20px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .clear-btn:hover { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.05); }
+
+        .status-text {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        /* ── History ── */
+        .history-section {
+            border-top: 1px solid var(--border-color);
+            padding: 0.5rem 0;
+        }
+
+        .history-title {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+        }
+
+        .history-entry {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.65rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.82rem;
+        }
+
+        .history-entry:hover { background: var(--glass-bg); }
+
+        .history-langs {
+            font-size: 0.68rem;
+            background: rgba(59,130,246,0.1);
+            border: 1px solid rgba(59,130,246,0.15);
+            color: var(--accent-color);
+            border-radius: 6px;
+            padding: 2px 6px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .history-snippet {
+            color: var(--text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Spinner inside translate btn */
+        .spin { animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            .panels { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container translate-shell">
+
+    <!-- Sidebar (reused) -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <i data-lucide="zap" class="logo-icon"></i>
+            <h1>AI Chat</h1>
+        </div>
+        <nav style="display:flex;flex-direction:column;gap:8px;margin-bottom:1.5rem;">
+            <a href="index.html" class="new-chat-btn" style="text-decoration:none;">
+                <i data-lucide="message-square"></i> Chat
+            </a>
+            <a href="translate.html" class="new-chat-btn" style="text-decoration:none;background:rgba(139,92,246,0.1);border-color:rgba(139,92,246,0.3);color:#a78bfa;">
+                <i data-lucide="languages"></i> Translator
+            </a>
+        </nav>
+        <div class="chat-history" id="translate-history">
+            <div class="history-title">Recent Translations</div>
+        </div>
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="avatar" id="user-avatar">?</div>
+                <div class="user-info">
+                    <span class="user-name" id="user-display-name">User</span>
+                    <button id="logout-btn" class="logout-link">Logout</button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="translate-main">
+        <header class="translate-header">
+            <div class="header-left">
+                <a href="index.html" class="back-btn">
+                    <i data-lucide="arrow-left" style="width:14px;height:14px;"></i> Back to Chat
+                </a>
+                <span class="page-title">AI Translator</span>
+                <span class="model-badge-t">Baichuan2-13B</span>
+            </div>
+            <div class="status-text">
+                <div class="status-dot"></div>
+                Model ready
+            </div>
+        </header>
+
+        <div class="translate-content">
+
+            <!-- Language selector bar -->
+            <div class="lang-bar">
+                <div class="lang-select-wrap">
+                    <label>From</label>
+                    <select id="source-lang" class="lang-select">
+                        <option value="English">🇬🇧 English</option>
+                        <option value="Hindi">🇮🇳 Hindi</option>
+                        <option value="Spanish">🇪🇸 Spanish</option>
+                        <option value="French">🇫🇷 French</option>
+                        <option value="German">🇩🇪 German</option>
+                        <option value="Chinese">🇨🇳 Chinese</option>
+                        <option value="Japanese">🇯🇵 Japanese</option>
+                        <option value="Arabic">🇸🇦 Arabic</option>
+                        <option value="Portuguese">🇧🇷 Portuguese</option>
+                        <option value="Russian">🇷🇺 Russian</option>
+                        <option value="Korean">🇰🇷 Korean</option>
+                        <option value="Italian">🇮🇹 Italian</option>
+                        <option value="Bengali">🇧🇩 Bengali</option>
+                    </select>
+                </div>
+
+                <button class="swap-btn" id="swap-btn" title="Swap languages">
+                    <i data-lucide="arrow-left-right" style="width:16px;height:16px;"></i>
+                </button>
+
+                <div class="lang-select-wrap">
+                    <label>To</label>
+                    <select id="target-lang" class="lang-select">
+                        <option value="Hindi">🇮🇳 Hindi</option>
+                        <option value="English">🇬🇧 English</option>
+                        <option value="Spanish">🇪🇸 Spanish</option>
+                        <option value="French">🇫🇷 French</option>
+                        <option value="German">🇩🇪 German</option>
+                        <option value="Chinese">🇨🇳 Chinese</option>
+                        <option value="Japanese">🇯🇵 Japanese</option>
+                        <option value="Arabic">🇸🇦 Arabic</option>
+                        <option value="Portuguese">🇧🇷 Portuguese</option>
+                        <option value="Russian">🇷🇺 Russian</option>
+                        <option value="Korean">🇰🇷 Korean</option>
+                        <option value="Italian">🇮🇹 Italian</option>
+                        <option value="Bengali">🇧🇩 Bengali</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Text panels -->
+            <div class="panels">
+                <!-- Input -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-label" id="source-label">Source · English</span>
+                        <div class="panel-actions">
+                            <button class="panel-icon-btn" id="paste-btn" title="Paste">
+                                <i data-lucide="clipboard" style="width:15px;height:15px;"></i>
+                            </button>
+                            <button class="panel-icon-btn" id="clear-input-btn" title="Clear">
+                                <i data-lucide="x" style="width:15px;height:15px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="source-text" placeholder="Enter text to translate…" maxlength="5000"></textarea>
+                    <div class="char-count"><span id="char-count">0</span> / 5000</div>
+                </div>
+
+                <!-- Output -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-label" id="target-label">Translation · Hindi</span>
+                        <div class="panel-actions">
+                            <button class="panel-icon-btn" id="copy-btn" title="Copy">
+                                <i data-lucide="copy" style="width:15px;height:15px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="output-area empty" id="output-area">Translation will appear here…</div>
+                    <div class="char-count" id="output-char-count"></div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="translate-actions">
+                <div style="display:flex;gap:10px;">
+                    <button class="translate-btn" id="translate-btn">
+                        <i data-lucide="languages" style="width:17px;height:17px;" id="translate-icon"></i>
+                        <span id="translate-label">Translate</span>
+                    </button>
+                    <button class="clear-btn" id="clear-all-btn">
+                        <i data-lucide="trash-2" style="width:15px;height:15px;"></i>
+                        Clear All
+                    </button>
+                </div>
+                <div style="font-size:0.75rem;color:var(--text-secondary);text-align:right;max-width:300px;line-height:1.5;">
+                    Powered by <strong style="color:#a78bfa;">Baichuan2-13B</strong> via NVIDIA NIM · Streaming enabled
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+
+    // Auth
+    const loggedInUsername = localStorage.getItem('username') || 'User';
+    document.getElementById('user-display-name').innerText = loggedInUsername;
+    document.getElementById('user-avatar').innerText = loggedInUsername.substring(0,2).toUpperCase();
+    document.getElementById('logout-btn').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        window.location.href = 'auth.html';
+    });
+
+    const sourceText  = document.getElementById('source-text');
+    const outputArea  = document.getElementById('output-area');
+    const sourceLang  = document.getElementById('source-lang');
+    const targetLang  = document.getElementById('target-lang');
+    const translateBtn = document.getElementById('translate-btn');
+    const translateLabel = document.getElementById('translate-label');
+    const translateIcon  = document.getElementById('translate-icon');
+    const charCount   = document.getElementById('char-count');
+    const outputCharCount = document.getElementById('output-char-count');
+
+    // Label updates
+    function updateLabels() {
+        document.getElementById('source-label').innerText = `Source · ${sourceLang.value}`;
+        document.getElementById('target-label').innerText = `Translation · ${targetLang.value}`;
+    }
+
+    sourceLang.addEventListener('change', updateLabels);
+    targetLang.addEventListener('change', updateLabels);
+
+    // Char counter
+    sourceText.addEventListener('input', () => {
+        charCount.innerText = sourceText.value.length;
+    });
+
+    // Swap
+    document.getElementById('swap-btn').addEventListener('click', () => {
+        const tmp = sourceLang.value;
+        sourceLang.value = targetLang.value;
+        targetLang.value = tmp;
+
+        // Also swap text if output has content
+        const outText = outputArea.innerText;
+        if (!outputArea.classList.contains('empty') && outText) {
+            sourceText.value = outText;
+            charCount.innerText = outText.length;
+            outputArea.innerText = '';
+            outputArea.classList.add('empty');
+            outputArea.innerText = 'Translation will appear here…';
+        }
+        updateLabels();
+    });
+
+    // Paste
+    document.getElementById('paste-btn').addEventListener('click', async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            sourceText.value = text;
+            charCount.innerText = text.length;
+        } catch { alert('Clipboard access denied.'); }
+    });
+
+    // Clear input
+    document.getElementById('clear-input-btn').addEventListener('click', () => {
+        sourceText.value = '';
+        charCount.innerText = '0';
+    });
+
+    // Clear all
+    document.getElementById('clear-all-btn').addEventListener('click', () => {
+        sourceText.value = '';
+        charCount.innerText = '0';
+        outputArea.innerText = 'Translation will appear here…';
+        outputArea.classList.add('empty');
+        outputCharCount.innerText = '';
+    });
+
+    // Copy output
+    document.getElementById('copy-btn').addEventListener('click', () => {
+        const txt = outputArea.classList.contains('empty') ? '' : outputArea.innerText;
+        if (!txt) return;
+        navigator.clipboard.writeText(txt).then(() => {
+            const btn = document.getElementById('copy-btn');
+            btn.innerHTML = '<i data-lucide="check" style="width:15px;height:15px;color:#22c55e;"></i>';
+            lucide.createIcons();
+            setTimeout(() => {
+                btn.innerHTML = '<i data-lucide="copy" style="width:15px;height:15px;"></i>';
+                lucide.createIcons();
+            }, 1500);
+        });
+    });
+
+    // History
+    let translationHistory = JSON.parse(localStorage.getItem('translate_history') || '[]');
+    renderHistory();
+
+    function renderHistory() {
+        const container = document.getElementById('translate-history');
+        const entries = translationHistory.slice(0, 8);
+        container.innerHTML = '<div class="history-title">Recent Translations</div>';
+        entries.forEach(entry => {
+            const el = document.createElement('div');
+            el.className = 'history-entry';
+            el.innerHTML = `
+                <span class="history-langs">${entry.src} → ${entry.tgt}</span>
+                <span class="history-snippet">${entry.text}</span>
+            `;
+            el.onclick = () => {
+                sourceText.value = entry.text;
+                charCount.innerText = entry.text.length;
+                sourceLang.value = entry.src;
+                targetLang.value = entry.tgt;
+                updateLabels();
+            };
+            container.appendChild(el);
+        });
+    }
+
+    // Translate
+    translateBtn.addEventListener('click', translate);
+    sourceText.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && e.ctrlKey) translate();
+    });
+
+    async function translate() {
+        const text = sourceText.value.trim();
+        if (!text) { sourceText.focus(); return; }
+
+        const src = sourceLang.value;
+        const tgt = targetLang.value;
+
+        // Update UI
+        translateBtn.disabled = true;
+        translateLabel.innerText = 'Translating…';
+        translateIcon.className = 'spin';
+        translateIcon.setAttribute('data-lucide', 'loader-2');
+        lucide.createIcons();
+
+        outputArea.innerText = '';
+        outputArea.classList.remove('empty');
+        let outputBuffer = '';
+
+        try {
+            const res = await fetch('/api/translate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ text, sourceLang: src, targetLang: tgt })
+            });
+
+            if (res.status === 401 || res.status === 403) {
+                localStorage.removeItem('token');
+                window.location.href = 'auth.html';
+                return;
+            }
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || 'Translation failed');
+            }
+
+            const reader  = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buf = '';
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                buf += decoder.decode(value, { stream: true });
+                const lines = buf.split('\n');
+                buf = lines.pop();
+
+                for (const line of lines) {
+                    const clean = line.trim();
+                    if (!clean.startsWith('data: ')) continue;
+                    const dataStr = clean.slice(6);
+                    if (dataStr === '[DONE]') break;
+                    try {
+                        const data = JSON.parse(dataStr);
+                        if (data.content) {
+                            outputBuffer += data.content;
+                            outputArea.innerText = outputBuffer;
+                            outputCharCount.innerText = `${outputBuffer.length} chars`;
+                        }
+                    } catch {}
+                }
+            }
+
+            // Save to history
+            translationHistory.unshift({ src, tgt, text: text.substring(0, 60) + (text.length > 60 ? '…' : '') });
+            translationHistory = translationHistory.slice(0, 20);
+            localStorage.setItem('translate_history', JSON.stringify(translationHistory));
+            renderHistory();
+
+        } catch (err) {
+            outputArea.innerText = `⚠️ Error: ${err.message}`;
+        } finally {
+            translateBtn.disabled = false;
+            translateLabel.innerText = 'Translate';
+            translateIcon.className = '';
+            translateIcon.setAttribute('data-lucide', 'languages');
+            lucide.createIcons();
+        }
+    }
+</script>
+</body>
+</html>
